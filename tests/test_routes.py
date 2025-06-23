@@ -167,6 +167,109 @@ class TestProductRoutes(TestCase):
     # ADD YOUR TEST CASES HERE
     #
 
+    def test_get_product(self):
+        """It should Get a single Product"""
+        # get the id of a product
+        test_product = self._create_products(1)[0]
+        # make a self.client.get request to the API endpoint and store the result in the variable named response
+        response = self.client.get(f"{BASE_URL}/{test_product.id}")
+        # assert that the resp.status_code is status.HTTP_200_OK
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # get the data from resp.get_json()
+        data = response.get_json()
+        # assert that data["name"] equals the test_product.name
+        self.assertEqual(data["name"], test_product.name)
+    
+    def test_get_product_not_found(self):
+        """It should not Get a Product thats not found"""
+        # send a self.client.get() request to the BASE_URL with an invalid product ID (e.g., 0)
+        response = self.client.get(f"{BASE_URL}/0")
+        # assert that the resp.status_code is status.HTTP_404_NOT_FOUND
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        data = response.get_json()
+        self.assertIn("was not found", data["message"])
+    
+    def test_update_product(self):
+        """It should Update an existing Product"""
+        # create a product to update
+        test_product = ProductFactory()
+        # send a self.client.post() request to the BASE_URL with a json payload of test_product.serialize()
+        response = self.client.post(BASE_URL, json=test_product.serialize())
+
+        # assert that the resp.status_code is status.HTTP_201_CREATED
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # UPDATE THE PRODUCT
+        # get the data from resp.get_json() as new_product
+        new_product = response.get_json()
+
+        # change new_account["description"] to unknown
+        new_product["description"] = "unknown"
+
+        # send a self.client.put() request to the BASE_URL with a json payload of new_product
+        response = self.client.put(f"{BASE_URL}/{new_product['id']}", json=new_product)
+
+        # assert that the resp.status_code is status.HTTP_200_OK
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # get the data from resp.get_json() as updated_product
+        updated_product = response.get_json()
+
+        # assert that the updated_product["description"] is whatever you changed it to
+        self.assertEqual(updated_product["description"], "unknown")
+    
+    def test_delete_product(self):
+        """It should Delete a Product"""
+
+        # create a list products containing 5 products using the _create_products() method. 
+        products = self._create_products(5)
+
+        # call the self.get_product_count() method to retrieve the initial count of products before any deletion
+        product_count = 5
+
+        # assign the first product from the products list to the variable test_product
+        test_product = products[0]
+
+        # send a self.client.delete() request to the BASE_URL with test_product.id
+        response = self.client.delete(f"{BASE_URL}/{test_product.id}")
+
+        # assert that the resp.status_code is status.HTTP_204_NO_CONTENT
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # check if the response data is empty 
+        self.assertEqual(len(response.data), 0)
+
+        # send a self.client.get request to the same endpoint that was deleted to retrieve the deteled product
+        response = self.client.get(f"{BASE_URL}/{test_product.id}")
+
+        # assert that the resp.status_code is status.HTTP_404_NOT_FOUND to confirm deletion of the product
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+        # retrieve the count of products after the deletion operation
+        new_count = self.get_product_count()
+
+        # check if the new count of products is one less than the initial count
+        self.assertEqual(new_count, product_count - 1)
+    
+    def test_get_product_list(self):
+        """It should Get a list of Products"""
+        self._create_products(5)
+        # send a self.client.get() request to the BASE_URL
+        response = self.client.get(BASE_URL)
+
+        # assert that the resp.status_code is status.HTTP_200_OK
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # get the data from resp.get_json()
+        data = response.get_json()
+
+        # assert that the len() of the data is 5 (the number of products you created)
+        self.assertEqual(len(data), 5)
+        
+        
+        
+        
+
     ######################################################################
     # Utility functions
     ######################################################################
